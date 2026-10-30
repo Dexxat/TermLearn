@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TermLearn | Plataforma Didáctica de Terminal Linux</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+            },
+            term: {
+              bg: '#0a0e17',
+              header: '#111827',
+              border: '#1f293d',
+              accent: '#38bdf8',
+              success: '#10b981',
+              warn: '#f59e0b',
+              error: '#ef4444',
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-terminal {
+      font-family: 'Fira Code', monospace;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .animate-badge {
+      animation: pulse-slow 3s infinite ease-in-out;
+    }
+    .cursor-blink {
+      animation: blink 1s step-start infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body class="bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="h-14 border-b border-slate-800 bg-[#0d1322]/90 backdrop-blur px-4 flex items-center justify-between z-20 shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-terminal font-bold text-base shadow-sm shadow-cyan-500/20">
+        &gt;_
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-white tracking-tight">Term<span class="text-cyan-400">Learn</span></span>
+          <span class="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/60">Linux WASM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Curriculum Module Selector -->
+    <div class="hidden md:flex items-center space-x-2 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-lg text-xs">
+      <span class="text-slate-400 font-medium">Módulo:</span>
+      <select id="moduleSelect" class="bg-transparent text-cyan-300 font-medium focus:outline-none cursor-pointer pr-2">
+        <!-- Injected via JS -->
+      </select>
+      <span class="text-slate-600">|</span>
+      <span id="lessonCounter" class="text-slate-400 font-mono">Lección 1 de 18</span>
+    </div>
+
+    <!-- Right: Stats, Sound & Cheatsheet -->
+    <div class="flex items-center space-x-3 text-xs">
+      <!-- XP Badge -->
+      <div class="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 px-2.5 py-1 rounded-md font-mono">
+        <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+        </svg>
+        <span id="xpCount" class="font-bold">0 XP</span>
+      </div>
+
+      <!-- Engine Status Indicator -->
+      <div id="engineStatus" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-emerald-950/60 border border-emerald-800/50 text-emerald-400 font-mono text-[11px]" title="Motor de Linux en WebAssembly activo y seguro en tu navegador">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>WASM Kernel 6.x</span>
+      </div>
+
+      <!-- Sound Toggle -->
+      <button id="soundToggle" class="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition" title="Alternar Sonidos">
+        <svg id="soundIconOn" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+        </svg>
+        <svg id="soundIconOff" class="w-4 h-4 hidden text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+        </svg>
+      </button>
+
+      <!-- Cheat Sheet Button -->
+      <button id="cheatSheetBtn" class="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition border border-slate-700">
+        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+        </svg>
+        <span class="hidden sm:inline">Glosario</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- PROGRESS BAR (Subtle top line) -->
+  <div class="h-1 bg-slate-900 w-full overflow-hidden shrink-0">
+    <div id="courseProgress" class="h-full bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 transition-all duration-500" style="width: 5.5%;"></div>
+  </div>
+
+  <!-- MAIN SPLIT-SCREEN WORKSPACE -->
+  <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+    <!-- LEFT PANEL: DIDACTIC & GUIDED TUTORIAL (45%) -->
+    <section class="w-full md:w-[46%] lg:w-[42%] flex flex-col border-r border-slate-800 bg-[#0d1322] overflow-y-auto">
+      <div class="p-5 md:p-6 flex-1 flex flex-col space-y-5">
+
+        <!-- Module Badge & Step -->
+        <div class="flex items-center justify-between">
+          <span id="moduleBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/80">
+            Módulo 1: Navegación Básica
+          </span>
+          <span id="stepBadge" class="text-xs font-mono text-slate-400">Paso 1 / 5</span>
+        </div>
+
+        <!-- Lesson Title & Description -->
+        <div>
+          <h1 id="lessonTitle" class="text-xl md:text-2xl font-bold text-white tracking-tight leading-snug">
+            ¿Dónde estoy? El comando <code class="text-cyan-400 font-terminal bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/50">pwd</code>
+          </h1>
+          <div id="lessonDescription" class="mt-3 text-slate-300 text-sm leading-relaxed space-y-2">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- ANATOMY OF THE COMMAND (Didactic visual breakdown) -->
+        <div class="bg-slate-900/90 rounded-xl border border-slate-800 p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+              <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              <span>Anatomía del Comando</span>
+            </span>
+            <span class="text-[10px] text-slate-500 font-mono">Sintaxis UNIX</span>
+          </div>
+          
+          <div id="anatomyContainer" class="flex flex-wrap gap-2 pt-1 font-terminal text-xs">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- THE MISSION OBJECTIVE (Target action) -->
+        <div id="objectiveBox" class="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-950/30 to-slate-900/60 p-4 relative overflow-hidden transition-all duration-300">
+          <div class="flex items-start space-x-3">
+            <div id="objectiveIcon" class="mt-0.5 w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/40">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-cyan-400">Tu Misión</h3>
+                <span id="objectiveStatus" class="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  Esperando comando...
+                </span>
+              </div>
+              <p id="objectiveText" class="mt-1 text-sm font-medium text-slate-200">
+                Escribe <code class="font-terminal text-cyan-300 bg-slate-900 px-1 py-0.5 rounded">pwd</code> en la terminal y presiona <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-[11px] text-slate-300 font-mono border border-slate-700">Enter</kbd>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- HINTS & TIPS (Accordion) -->
+        <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/40">
+          <button id="hintToggleBtn" class="w-full px-4 py-3 text-left text-xs font-medium text-slate-300 hover:text-white flex items-center justify-between transition hover:bg-slate-800/40">
+            <span class="flex items-center space-x-2">
+              <span class="text-amber-400">💡</span>
+              <span>¿Necesitas una pista?</span>
+            </span>
+            <svg id="hintArrow" class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div id="hintContent" class="hidden px-4 pb-3 pt-1 text-xs text-slate-400 border-t border-slate-800/60 leading-relaxed space-y-2">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- EXPLANATION OF COMMON ERRORS / PRO-TIP -->
+        <div id="proTipBox" class="text-xs p-3.5 rounded-lg bg-slate-900/50 border border-slate-800 text-slate-400 flex items-start space-x-2.5">
+          <span class="text-cyan-400 text-sm">ℹ️</span>
+          <div id="proTipText" class="leading-relaxed">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM NAVIGATION BUTTONS -->
+      <div class="p-4 border-t border-slate-800 bg-[#0a0e17]/80 flex items-center justify-between shrink-0">
+        <button id="prevBtn" class="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition disabled:opacity-30 disabled:pointer-events-none flex items-center space-x-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          <span>Anterior</span>
+        </button>
+
+        <button id="nextBtn" class="px-5 py-2 rounded-lg text-xs font-semibold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition flex items-center space-x-2 shadow-lg shadow-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed">
+          <span>Siguiente Lección</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: INTERACTIVE WEBASSEMBLY TERMINAL (54-58%) -->
+    <section class="flex-1 flex flex-col bg-[#070a11] relative overflow-hidden">
+      
+      <!-- Terminal Header / Titlebar -->
+      <div class="h-10 bg-[#0d1322] border-b border-slate-800/80 px-4 flex items-center justify-between shrink-0">
+        <!-- Mac-style dots -->
+        <div class="flex items-center space-x-2">
+          <div class="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 transition cursor-pointer" title="Cerrar"></div>
+          <div class="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 transition cursor-pointer" title="Minimizar"></div>
+          <div class="w-3 h-3 rounded-full bg-green-500/80 hover:bg-green-500 transition cursor-pointer" title="Maximizar"></div>
+          <span class="ml-2 text-xs font-mono text-slate-400 flex items-center space-x-1.5">
+            <span class="text-cyan-400">term@wasm-linux</span>
+            <span class="text-slate-600">:</span>
+            <span id="termCwdBadge" class="text-slate-300">~</span>
+          </span>
+        </div>
+
+        <!-- Terminal Actions -->
+        <div class="flex items-center space-x-2">
+          <button id="copyPromptBtn" class="text-[11px] text-slate-400 hover:text-slate-200 px-2 py-0.5 rounded hover:bg-slate-800 transition flex items-center space-x-1" title="Autocompletar comando sugerido">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+            </svg>
+            <span class="hidden sm:inline">Pegar Solución</span>
+          </button>
+
+          <button id="clearTermBtn" class="text-[11px] text-slate-400 hover:text-slate-200 px-2 py-0.5 rounded hover:bg-slate-800 transition" title="Limpiar pantalla (Ctrl+L o comando clear)">
+            Limpiar
+          </button>
+
+          <button id="resetFSSBtn" class="text-[11px] text-rose-400/80 hover:text-rose-300 px-2 py-0.5 rounded hover:bg-rose-950/40 transition" title="Restaurar archivos originales">
+            Reiniciar FS
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Terminal Output & Prompt Area -->
+      <div id="terminalScreen" class="flex-1 p-4 overflow-y-auto font-terminal text-sm leading-relaxed text-slate-200 select-text cursor-text" onclick="focusTermInput()">
+        <!-- Welcome banner -->
+        <div class="text-slate-500 mb-4 select-none text-xs">
+          <pre class="text-cyan-500/80 font-bold mb-2">
+  _                 _                            
+ | |_ ___ _ __ _ __| |   ___ __ _ _ _ _ _        
+ |  _/ -_) '_| '  \_| |__/ -_) _` | '_| ' \       
+  \__\___|_| |_|_|_|____|\___\__,_|_| |_||_| WASM</pre>
+          <span>Linux 6.1.0-wasm-x86_64 GNU/BusyBox 1.36.1</span><br>
+          <span>Escribe comandos estándar de Linux. Presiona <span class="text-slate-300 font-bold">Tab</span> para autocompletar.</span><br>
+          <span>--------------------------------------------------------------------------------</span>
+        </div>
+
+        <!-- Terminal log entries -->
+        <div id="terminalLogs" class="space-y-1"></div>
+
+        <!-- Active Input Line -->
+        <div class="flex items-center space-x-2 mt-2" id="inputLine">
+          <span class="text-emerald-400 select-none font-bold">aprendiz@wasm</span><span class="text-slate-500 select-none">:</span><span id="termPromptPath" class="text-cyan-400 select-none font-semibold">~</span><span class="text-slate-400 select-none">$</span>
+          <div class="relative flex-1 flex items-center">
+            <input 
+              id="termInput" 
+              type="text" 
+              autocomplete="off" 
+              autocorrect="off" 
+              autocapitalize="off" 
+              spellcheck="false" 
+              class="w-full bg-transparent text-slate-100 font-terminal text-sm focus:outline-none border-none p-0 tracking-wide"
+              placeholder=""
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal Bottom Helper Bar -->
+      <div class="h-8 border-t border-slate-800/80 bg-[#0d1322] px-4 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+        <div class="flex items-center space-x-3">
+          <span>Historial: <kbd class="text-slate-400 font-bold">↑</kbd> <kbd class="text-slate-400 font-bold">↓</kbd></span>
+          <span>Autocompletar: <kbd class="text-slate-400 font-bold">Tab</kbd></span>
+          <span>Limpiar: <kbd class="text-slate-400 font-bold">Ctrl+L</kbd></span>
+        </div>
+        <div id="termMessageBadge" class="text-cyan-400 font-sans hidden">
+          <!-- Live toast message -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CHEAT SHEET MODAL -->
+  <div id="cheatSheetModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div class="flex items-center space-x-2">
+          <span class="text-cyan-400 font-terminal text-lg">#</span>
+          <h2 class="font-bold text-white text-base">Glosario Rápido de Comandos Linux</h2>
+        </div>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-6 text-sm">
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-2">1. Navegación e Información</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-cyan-300 font-bold">pwd</span>: Muestra la ruta actual</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-cyan-300 font-bold">ls</span>: Lista archivos y carpetas</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-cyan-300 font-bold">ls -la</span>: Lista todo (incluidos ocultos) con detalles</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-cyan-300 font-bold">cd &lt;dir&gt;</span>: Cambia de directorio</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-cyan-300 font-bold">cd ..</span>: Sube un nivel en el árbol</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-cyan-300 font-bold">cd ~</span>: Vuelve a tu carpeta personal ($HOME)</div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2">2. Archivos y Carpetas</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-emerald-300 font-bold">mkdir &lt;nombre&gt;</span>: Crea un directorio</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-emerald-300 font-bold">touch &lt;archivo&gt;</span>: Crea un archivo vacío</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-emerald-300 font-bold">cp &lt;orig&gt; &lt;dest&gt;</span>: Copia un archivo</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-emerald-300 font-bold">mv &lt;orig&gt; &lt;dest&gt;</span>: Mueve o renombra</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-emerald-300 font-bold">rm &lt;archivo&gt;</span>: Elimina un archivo</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-emerald-300 font-bold">rm -r &lt;carpeta&gt;</span>: Elimina una carpeta</div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-2">3. Inspección, Búsqueda y Tuberías</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-amber-300 font-bold">cat &lt;archivo&gt;</span>: Muestra el contenido</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-amber-300 font-bold">head -n 5</span>: Muestra las primeras 5 líneas</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-amber-300 font-bold">grep &lt;texto&gt;</span>: Busca líneas con ese texto</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-amber-300 font-bold">|</span>: Conecta la salida de un comando a otro</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-amber-300 font-bold">&gt;</span>: Guarda la salida en un archivo (sobrescribe)</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-amber-300 font-bold">&gt;&gt;</span>: Agrega la salida al final del archivo</div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-purple-400 mb-2">4. Permisos, Procesos y Servicios</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-purple-300 font-bold">chmod +x &lt;file&gt;</span>: Da permisos de ejecución</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-purple-300 font-bold">ps aux</span>: Muestra procesos activos</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-purple-300 font-bold">kill &lt;pid&gt;</span>: Finaliza un proceso por su ID</div>
+            <div class="p-2 rounded bg-slate-950/80 border border-slate-800"><span class="text-purple-300 font-bold">curl &lt;url&gt;</span>: Hace una petición HTTP</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    /* =========================================================================
+       AUDIO SYNTHESIZER (Web Audio API - No external assets required)
+       ========================================================================= */
+    let soundEnabled = true;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioContext();
+    }
+
+    function playSuccessSound() {
+      if (!soundEnabled) return;
+      initAudio();
+      try {
+        const now = audioCtx.currentTime;
+        // Two-note bright ascending chime
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, now); // D5
+        osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+        gain1.gain.setValueAtTime(0.12, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(880, now + 0.12);
+        osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.3); // D6
+        gain2.gain.setValueAtTime(0.1, now + 0.12);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.12);
+        osc2.stop(now + 0.45);
+      } catch (e) {
+        console.warn('Audio feedback failed:', e);
+      }
+    }
+
+    function playErrorSound() {
+      if (!soundEnabled) return;
+      initAudio();
+      try {
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.18);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } catch (e) {}
+    }
+
+    /* =========================================================================
+       CURRICULUM MVP: 5 MODULES & 18 PROGRESSIVE LESSONS
+       ========================================================================= */
+    const CURRICULUM = [
+      {
+        id: "module-1",
+        title: "Módulo 1: Perdiendo el miedo (Navegación)",
+        badge: "Nivel 1: Navegación",
+        lessons: [
+          {
+            id: "1.1",
+            title: "¿Dónde estoy? El comando pwd",
+            desc: "<p>Cuando estás en la terminal no tienes ventanas ni iconos para saber dónde estás ubicado. La terminal siempre tiene un <strong>directorio de trabajo actual</strong> (Current Working Directory).</p><p><code class='text-cyan-400'>pwd</code> significa <em>'Print Working Directory'</em> (Imprimir directorio de trabajo). Te muestra la ruta absoluta del lugar en el que estás operando.</p>",
+            anatomy: [
+              { token: "pwd", label: "Comando Base", desc: "Print Working Directory", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" }
+            ],
+            objectiveText: "Escribe <code>pwd</code> en la terminal y presiona <kbd>Enter</kbd>.",
+            suggestedCommand: "pwd",
+            validator: (cmd) => cmd.trim() === "pwd",
+            hint: "Simplemente escribe las tres letras 'pwd' (sin espacios ni comillas) y pulsa la tecla Enter.",
+            proTip: "La ruta que verás inicia con <code>/</code> (la raíz de todo el sistema de archivos de Linux). Tu carpeta de usuario suele ser <code>/home/aprendiz</code>.",
+            xp: 20
+          },
+          {
+            id: "1.2",
+            title: "Mirando a tu alrededor: El comando ls",
+            desc: "<p>Ahora que sabes dónde estás, necesitas ver qué hay a tu alrededor. El comando <code class='text-cyan-400'>ls</code> viene de <em>'list'</em> y enumera los archivos y carpetas contenidos en el directorio actual.</p>",
+            anatomy: [
+              { token: "ls", label: "Comando Base", desc: "List (listar contenidos)", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" }
+            ],
+            objectiveText: "Ejecuta <code>ls</code> para explorar los archivos de tu carpeta personal.",
+            suggestedCommand: "ls",
+            validator: (cmd) => cmd.trim() === "ls",
+            hint: "Escribe 'ls' y presiona Enter. Notarás diferentes colores: el azul indica carpetas y el blanco archivos regulares.",
+            proTip: "En Linux, los colores de la terminal te dan superpoderes: las carpetas, ejecutables y enlaces simbólicos tienen colores diferenciados por defecto.",
+            xp: 25
+          },
+          {
+            id: "1.3",
+            title: "Superpoderes con Flags: ls -la",
+            desc: "<p>Los comandos de Linux aceptan <strong>modificadores (flags o banderas)</strong> que alteran su comportamiento.</p><p><code class='text-cyan-400'>-l</code> muestra formato largo (detalles de permisos, tamaño y fecha de modificación).<br><code class='text-cyan-400'>-a</code> viene de <em>'all'</em> y revela <strong>archivos ocultos</strong> (aquellos cuyo nombre empieza con un punto, como <code>.bashrc</code>).</p>",
+            anatomy: [
+              { token: "ls", label: "Comando", desc: "Listar", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "-l", label: "Flag", desc: "Formato largo (detallado)", color: "text-emerald-400 border-emerald-500/40 bg-emerald-950/40" },
+              { token: "-a", label: "Flag", desc: "Incluir ocultos (all)", color: "text-amber-400 border-amber-500/40 bg-amber-950/40" }
+            ],
+            objectiveText: "Ejecuta <code>ls -la</code> para descubrir los archivos ocultos y los metadatos.",
+            suggestedCommand: "ls -la",
+            validator: (cmd) => {
+              const c = cmd.trim();
+              return c === "ls -la" || c === "ls -al" || c === "ls -a -l" || c === "ls -l -a";
+            },
+            hint: "Escribe 'ls -la'. También puedes escribir los flags por separado: 'ls -l -a'.",
+            proTip: "¿Viste las entradas <code>.</code> y <code>..</code>? El punto simple representa el directorio actual; los dos puntos representan el directorio padre (arriba).",
+            xp: 30
+          },
+          {
+            id: "1.4",
+            title: "Moviéndote: El comando cd",
+            desc: "<p>Para moverte entre carpetas usamos <code class='text-cyan-400'>cd</code> (<em>'Change Directory'</em>). Le indicas como argumento el nombre de la carpeta a la que deseas entrar.</p><p>Para retroceder un nivel hacia la carpeta anterior usamos <code class='text-cyan-400'>cd ..</code>.</p>",
+            anatomy: [
+              { token: "cd", label: "Comando", desc: "Change Directory", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "proyectos", label: "Argumento", desc: "Directorio destino", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" }
+            ],
+            objectiveText: "Entra a la carpeta de proyectos escribiendo <code>cd proyectos</code>.",
+            suggestedCommand: "cd proyectos",
+            validator: (cmd) => cmd.trim() === "cd proyectos" || cmd.trim() === "cd ./proyectos",
+            hint: "Escribe 'cd proyectos' y presiona Enter. Observa cómo el prompt cambiará para mostrarte tu nueva ubicación.",
+            proTip: "No tienes que escribir la palabra completa: si escribes <code>cd pro</code> y presionas la tecla <kbd>Tab</kbd>, la terminal autocompletará el nombre.",
+            xp: 30
+          },
+          {
+            id: "1.5",
+            title: "Retroceder y Rutas Rápidas: cd .. y cd ~",
+            desc: "<p>Para volver a subir un nivel en el árbol de carpetas, usamos los dos puntos: <code class='text-cyan-400'>cd ..</code>.</p><p>Además, la tilde <code class='text-cyan-400'>~</code> es un atajo universal en Linux que representa tu <strong>directorio personal (HOME)</strong>. Sin importar dónde estés, <code class='text-cyan-400'>cd ~</code> (o simplemente <code>cd</code> a solas) te lleva a casa.</p>",
+            anatomy: [
+              { token: "cd", label: "Comando", desc: "Change Directory", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "..", label: "Ruta Especial", desc: "Carpeta superior (padre)", color: "text-amber-400 border-amber-500/40 bg-amber-950/40" }
+            ],
+            objectiveText: "Retrocede al directorio anterior ejecutando <code>cd ..</code>.",
+            suggestedCommand: "cd ..",
+            validator: (cmd) => cmd.trim() === "cd .." || cmd.trim() === "cd ~",
+            hint: "Escribe 'cd ..' con un espacio entre 'cd' y los dos puntos.",
+            proTip: "Si olvidas el espacio y escribes 'cd..', la terminal te dirá 'command not found'. En Linux los espacios separan el comando de sus argumentos.",
+            xp: 30
+          }
+        ]
+      },
+      {
+        id: "module-2",
+        title: "Módulo 2: Manipulación de Archivos y Carpetas",
+        badge: "Nivel 2: Archivos & Directorios",
+        lessons: [
+          {
+            id: "2.1",
+            title: "Creando carpetas: mkdir",
+            desc: "<p>Para crear una nueva carpeta usamos <code class='text-cyan-400'>mkdir</code> (<em>'Make Directory'</em>). Puedes crear varias carpetas a la vez o estructuras completas con el flag <code class='text-emerald-400'>-p</code>.</p>",
+            anatomy: [
+              { token: "mkdir", label: "Comando", desc: "Make Directory", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "laboratorio", label: "Argumento", desc: "Nombre de la nueva carpeta", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" }
+            ],
+            objectiveText: "Crea una nueva carpeta llamada <code>laboratorio</code> usando <code>mkdir laboratorio</code>.",
+            suggestedCommand: "mkdir laboratorio",
+            validator: (cmd) => cmd.trim() === "mkdir laboratorio",
+            hint: "Escribe 'mkdir laboratorio' y confirma luego con 'ls' para ver tu nueva carpeta creada.",
+            proTip: "Si quieres crear subcarpetas anidadas de un solo tiro (ej: <code>app/backend/api</code>), usa <code>mkdir -p app/backend/api</code>.",
+            xp: 35
+          },
+          {
+            id: "2.2",
+            title: "Creando archivos vacíos: touch",
+            desc: "<p>El comando <code class='text-cyan-400'>touch</code> tiene un uso principal muy práctico: si el archivo no existe, lo crea inmediatamente vacío. Si ya existe, actualiza su fecha y hora de modificación sin alterar su contenido.</p>",
+            anatomy: [
+              { token: "touch", label: "Comando", desc: "Crear archivo vacío o actualizar timestamp", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "notas.txt", label: "Argumento", desc: "Nombre del archivo", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" }
+            ],
+            objectiveText: "Crea un archivo llamado <code>notas.txt</code> con <code>touch notas.txt</code>.",
+            suggestedCommand: "touch notas.txt",
+            validator: (cmd) => cmd.trim() === "touch notas.txt",
+            hint: "Escribe 'touch notas.txt'. Puedes verificarlo ejecutando 'ls -l'.",
+            proTip: "Puedes crear varios archivos simultáneamente: <code>touch a.txt b.txt c.txt</code>.",
+            xp: 35
+          },
+          {
+            id: "2.3",
+            title: "Duplicar archivos: cp",
+            desc: "<p><code class='text-cyan-400'>cp</code> viene de <em>'copy'</em>. Requiere dos argumentos principales: el <strong>origen</strong> y el <strong>destino</strong>.</p><p>Sintaxis: <code>cp &lt;origen&gt; &lt;destino&gt;</code>.</p>",
+            anatomy: [
+              { token: "cp", label: "Comando", desc: "Copy (Copiar)", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "notas.txt", label: "Origen", desc: "Archivo que se va a duplicar", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" },
+              { token: "copia.txt", label: "Destino", desc: "Nombre de la copia", color: "text-emerald-400 border-emerald-500/40 bg-emerald-950/40" }
+            ],
+            objectiveText: "Copia <code>notas.txt</code> en un nuevo archivo llamado <code>copia.txt</code>.",
+            suggestedCommand: "cp notas.txt copia.txt",
+            validator: (cmd) => cmd.trim() === "cp notas.txt copia.txt",
+            hint: "Escribe 'cp notas.txt copia.txt'. Luego escribe 'ls' para comprobar que ambos existen.",
+            proTip: "Para copiar directorios completos con todos sus contenidos debes usar el flag recursivo: <code>cp -r carpeta_origen copia_carpeta</code>.",
+            xp: 40
+          },
+          {
+            id: "2.4",
+            title: "Mover y Renombrar: mv",
+            desc: "<p>En Linux, mover un archivo de lugar y cambiarle el nombre son la misma operación bajo el capó. El comando <code class='text-cyan-400'>mv</code> (<em>'move'</em>) se encarga de ambas tareas.</p>",
+            anatomy: [
+              { token: "mv", label: "Comando", desc: "Move (Mover o Renombrar)", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "copia.txt", label: "Origen", desc: "Archivo actual", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" },
+              { token: "backup.txt", label: "Destino", desc: "Nuevo nombre o ruta", color: "text-emerald-400 border-emerald-500/40 bg-emerald-950/40" }
+            ],
+            objectiveText: "Renombra <code>copia.txt</code> a <code>backup.txt</code> usando <code>mv</code>.",
+            suggestedCommand: "mv copia.txt backup.txt",
+            validator: (cmd) => cmd.trim() === "mv copia.txt backup.txt",
+            hint: "Escribe 'mv copia.txt backup.txt'. Verás que 'copia.txt' deja de existir y ahora se llama 'backup.txt'.",
+            proTip: "¡Cuidado! Si el archivo de destino ya existe, <code>mv</code> lo sobrescribirá sin avisar por defecto.",
+            xp: 40
+          },
+          {
+            id: "2.5",
+            title: "Eliminar sin piedad: rm",
+            desc: "<p>El comando <code class='text-cyan-400'>rm</code> viene de <em>'remove'</em>. En la terminal <strong>NO existe papelera de reciclaje</strong>: cuando borras algo con <code>rm</code>, desaparece de inmediato y de forma permanente.</p>",
+            anatomy: [
+              { token: "rm", label: "Comando", desc: "Remove (Eliminar)", color: "text-rose-400 border-rose-500/40 bg-rose-950/40" },
+              { token: "backup.txt", label: "Argumento", desc: "Archivo a destruir", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" }
+            ],
+            objectiveText: "Elimina el archivo <code>backup.txt</code> usando <code>rm backup.txt</code>.",
+            suggestedCommand: "rm backup.txt",
+            validator: (cmd) => cmd.trim() === "rm backup.txt",
+            hint: "Escribe 'rm backup.txt'. Luego haz un 'ls' para ver que ya no está.",
+            proTip: "Para borrar carpetas se usa <code>rm -r</code> (recursivo). El mítico meme de <code>rm -rf /</code> borraría todo tu disco porque '-f' (force) no pide confirmación.",
+            xp: 40
+          }
+        ]
+      },
+      {
+        id: "module-3",
+        title: "Módulo 3: Inspección, Filtros y Tuberías",
+        badge: "Nivel 3: El Poder de UNIX",
+        lessons: [
+          {
+            id: "3.1",
+            title: "Leyendo archivos al vuelo: cat y head",
+            desc: "<p>Para ver el contenido de un archivo de texto en la terminal no necesitas abrir un procesador de texto. <code class='text-cyan-400'>cat</code> (<em>'concatenate'</em>) imprime todo el contenido de un archivo directamente en tu pantalla.</p>",
+            anatomy: [
+              { token: "cat", label: "Comando", desc: "Imprimir contenido en pantalla", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "servidor.log", label: "Argumento", desc: "Archivo a leer", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" }
+            ],
+            objectiveText: "Examina el archivo de registros ejecutando <code>cat servidor.log</code>.",
+            suggestedCommand: "cat servidor.log",
+            validator: (cmd) => cmd.trim() === "cat servidor.log",
+            hint: "Escribe 'cat servidor.log' y pulsa Enter para ver las líneas del log del servidor.",
+            proTip: "Si un archivo tiene miles de líneas, <code>cat</code> saturará tu pantalla. Para ver solo las primeras líneas se usa <code>head -n 10 archivo</code> y para las últimas <code>tail -n 10 archivo</code>.",
+            xp: 40
+          },
+          {
+            id: "3.2",
+            title: "Buscando texto con grep",
+            desc: "<p><code class='text-cyan-400'>grep</code> es una de las herramientas más legendarias y utilizadas de Linux. Busca patrones de texto dentro de archivos y te muestra únicamente las líneas que coinciden.</p>",
+            anatomy: [
+              { token: "grep", label: "Comando", desc: "Buscador de patrones", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "\"ERROR\"", label: "Patrón", desc: "Palabra o regex a buscar", color: "text-amber-400 border-amber-500/40 bg-amber-950/40" },
+              { token: "servidor.log", label: "Archivo", desc: "Dónde buscar", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" }
+            ],
+            objectiveText: "Filtra únicamente las líneas con errores usando <code>grep ERROR servidor.log</code>.",
+            suggestedCommand: "grep ERROR servidor.log",
+            validator: (cmd) => {
+              const c = cmd.trim();
+              return c === "grep ERROR servidor.log" || c === "grep 'ERROR' servidor.log" || c === 'grep "ERROR" servidor.log';
+            },
+            hint: "Escribe 'grep ERROR servidor.log'. Observa cómo solo aparecen las alertas de error.",
+            proTip: "Si quieres buscar sin distinguir mayúsculas de minúsculas, añade el flag <code>-i</code>: <code>grep -i error servidor.log</code>.",
+            xp: 45
+          },
+          {
+            id: "3.3",
+            title: "La Filosofía UNIX: La Tubería (Pipe |)",
+            desc: "<p>La filosofía de Linux se basa en: <em>'Herramientas pequeñas que hacen una sola cosa bien, y que se pueden conectar entre sí'</em>.</p><p>El operador barra vertical <code class='text-cyan-400'>|</code> toma la salida del comando de la izquierda y la inyecta como entrada del comando de la derecha.</p>",
+            anatomy: [
+              { token: "cat servidor.log", label: "Paso 1", desc: "Lee el archivo completo", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" },
+              { token: "|", label: "Tubería (Pipe)", desc: "Transfiere el flujo de datos", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40 font-bold" },
+              { token: "grep 404", label: "Paso 2", desc: "Filtra solo los errores 404", color: "text-emerald-400 border-emerald-500/40 bg-emerald-950/40" }
+            ],
+            objectiveText: "Conecta cat y grep ejecutando: <code>cat servidor.log | grep 404</code>.",
+            suggestedCommand: "cat servidor.log | grep 404",
+            validator: (cmd) => {
+              const c = cmd.trim().replace(/\s+/g, ' ');
+              return c === "cat servidor.log | grep 404" || c === "cat servidor.log|grep 404";
+            },
+            hint: "El símbolo '|' suele estar en la tecla a la izquierda del 1 o con AltGr+1 / Option+1 en Mac.",
+            proTip: "¡Puedes encadenar tantas tuberías como quieras! Ej: <code>cat log | grep 404 | wc -l</code> cuenta cuántos errores 404 ocurrieron.",
+            xp: 50
+          },
+          {
+            id: "3.4",
+            title: "Redirección de Salida: > y >>",
+            desc: "<p>Normalmente los comandos escriben en tu pantalla. Con el símbolo mayor que <code class='text-cyan-400'>&gt;</code> puedes <strong>redireccionar</strong> esa salida directamente a un archivo.</p><p><code class='text-emerald-400'>&gt;</code> sobrescribe el archivo destino.<br><code class='text-amber-400'>&gt;&gt;</code> añade al final (append) sin borrar lo existente.</p>",
+            anatomy: [
+              { token: "echo \"OK\"", label: "Comando", desc: "Genera texto", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" },
+              { token: ">", label: "Redirección", desc: "Guarda en archivo (sobrescribir)", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40 font-bold" },
+              { token: "estado.txt", label: "Destino", desc: "Archivo donde se guarda el texto", color: "text-emerald-400 border-emerald-500/40 bg-emerald-950/40" }
+            ],
+            objectiveText: "Guarda un mensaje en un archivo ejecutando: <code>echo 'Servicio Activo' > estado.txt</code>.",
+            suggestedCommand: "echo 'Servicio Activo' > estado.txt",
+            validator: (cmd) => {
+              const c = cmd.trim();
+              return c.startsWith("echo ") && c.includes("> estado.txt");
+            },
+            hint: "Escribe echo 'Servicio Activo' > estado.txt y luego haz un 'cat estado.txt' para ver el resultado.",
+            proTip: "Si usas <code>>></code> en lugar de <code>></code> no borrarás el archivo, sino que agregarás una nueva línea al final. Ideal para bitácoras.",
+            xp: 45
+          }
+        ]
+      },
+      {
+        id: "module-4",
+        title: "Módulo 4: Permisos y Seguridad en Linux",
+        badge: "Nivel 4: Permisos & Roles",
+        lessons: [
+          {
+            id: "4.1",
+            title: "Entendiendo Permisos: chmod",
+            desc: "<p>En Linux cada archivo tiene permisos para 3 entidades: <strong>U</strong>suario (propietario), <strong>G</strong>rupo, y <strong>O</strong>tros. Y 3 tipos de acceso: <strong>r</strong>ead (lectura), <strong>w</strong>rite (escritura) y e<strong>x</strong>ecute (ejecución).</p><p>Para hacer que un script sea ejecutable usamos <code class='text-cyan-400'>chmod +x</code>.</p>",
+            anatomy: [
+              { token: "chmod", label: "Comando", desc: "Change Mode (cambiar permisos)", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "+x", label: "Modificador", desc: "Añadir permiso de eXecute", color: "text-emerald-400 border-emerald-500/40 bg-emerald-950/40" },
+              { token: "script.sh", label: "Objetivo", desc: "Archivo de script", color: "text-purple-400 border-purple-500/40 bg-purple-950/40" }
+            ],
+            objectiveText: "Convierte <code>script.sh</code> en ejecutable ejecutando <code>chmod +x script.sh</code>.",
+            suggestedCommand: "chmod +x script.sh",
+            validator: (cmd) => cmd.trim() === "chmod +x script.sh",
+            hint: "Escribe 'chmod +x script.sh'. Si luego haces 'ls -l', verás que ahora tiene una 'x' en sus permisos y cambia a color verde.",
+            proTip: "Los permisos también se representan con números octales: 755 (rwxr-xr-x) o 644 (rw-r--r--). 4=lectura, 2=escritura, 1=ejecución.",
+            xp: 50
+          },
+          {
+            id: "4.2",
+            title: "¿Quién soy? whoami y el Superusuario",
+            desc: "<p>En sistemas multiusuario es vital saber con qué privilegios estás trabajando. El comando <code class='text-cyan-400'>whoami</code> te dice exactamente cuál es tu nombre de usuario actual.</p>",
+            anatomy: [
+              { token: "whoami", label: "Comando Base", desc: "Imprime el usuario actual", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" }
+            ],
+            objectiveText: "Descubre tu usuario en la terminal ejecutando <code>whoami</code>.",
+            suggestedCommand: "whoami",
+            validator: (cmd) => cmd.trim() === "whoami",
+            hint: "Escribe 'whoami' y presiona Enter.",
+            proTip: "El administrador del sistema en Linux se llama <code>root</code>. Para ejecutar comandos como root sin cambiar de cuenta se usa el prefijo <code>sudo</code> (SuperUser DO).",
+            xp: 35
+          }
+        ]
+      },
+      {
+        id: "module-5",
+        title: "Módulo 5: Procesos y Servicios Básicos",
+        badge: "Nivel 5: Procesos & Red",
+        lessons: [
+          {
+            id: "5.1",
+            title: "Monitoreando Procesos: ps aux",
+            desc: "<p>Cada programa corriendo en Linux es un <strong>proceso</strong> y tiene un identificador numérico único llamado <strong>PID</strong> (Process ID).</p><p><code class='text-cyan-400'>ps aux</code> lista todos los procesos en ejecución con su consumo de CPU, memoria y comando de origen.</p>",
+            anatomy: [
+              { token: "ps", label: "Comando", desc: "Process Status", color: "text-cyan-400 border-cyan-500/40 bg-cyan-950/40" },
+              { token: "aux", label: "Flags BSD", desc: "Todos los usuarios (a), detalle (u), sin terminal (x)", color: "text-emerald-400 border-emerald-500/40 bg-emerald-950/40" }
+            ],
+            objectiveText: "Inspecciona los procesos activos del sistema escribiendo <code>ps aux</code>.",
+            suggestedCommand: "ps aux",
+            validator: (cmd) => cmd.trim() === "ps aux" || cmd.trim() === "ps",
+            hint: "Escribe 'ps aux' para ver la lista de procesos corriendo en el kernel.",
+            proTip: "Si quieres ver el consumo de CPU en tiempo real interactivo estilo administrador de tareas, el comando estándar es <code>top</code> (o el moderno <code>htop</code>).",
+            xp: 45
+          },
+          {
+            id: "5.2",
+            title: "Deteniendo Procesos Rebeldes: kill",
+            desc: "<p>Cuando un servidor web o script se queda colgado, puedes pedirle amablemente al kernel que lo detenga usando <code class='text-cyan-400'>kill &lt;PID&gt;</code>.</p><p>En la lista anterior verás un proceso rebelde de node/python con el PID <strong>1337</strong>.</p>",
+            anatomy: [
+              { token: "kill", label: "Comando", desc: "Enviar señal de terminación", color: "text-rose-400 border-rose-500/40 bg-rose-950/40" },
+              { token: "1337", label: "PID", desc: "Identificador del proceso objetivo", color: "text-amber-400 border-amber-500/40 bg-amber-950/40" }
+            ],
+            objectiveText: "Termina el proceso colgado ejecutando <code>kill 1337</code>.",
+            suggestedCommand: "kill 1337",
+            validator: (cmd) => cmd.trim() === "kill 1337" || cmd.trim() === "kill -9 1337",
+            hint: "Escribe 'kill 1337' y presiona Enter.",
+            proTip: "Por defecto <code>kill</code> envía la señal SIGTERM (15, salida limpia). Si el proceso no responde, <code>kill -9</code> envía SIGKILL (terminación forzosa inmediata).",
+            xp: 50
+          }
+        ]
+      }
+    ];
+
+    /* Flatten lessons for simple linear progression */
+    const ALL_LESSONS = [];
+    CURRICULUM.forEach((mod, mIdx) => {
+      mod.lessons.forEach((les, lIdx) => {
+        ALL_LESSONS.push({
+          ...les,
+          moduleIndex: mIdx,
+          moduleTitle: mod.title,
+          moduleBadge: mod.badge,
+          lessonIndex: lIdx,
+          globalIndex: ALL_LESSONS.length
+        });
+      });
+    });
+
+    /* =========================================================================
+       VIRTUAL POSIX WASM ENGINE & FILESYSTEM SIMULATION
+       ========================================================================= */
+    class VirtualFileSystem {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.cwd = "/home/aprendiz";
+        this.tree = {
+          "/": {
+            type: "dir",
+            children: {
+              "bin": {
+                type: "dir",
+                children: {
+                  "sh": { type: "file", perms: "-rwxr-xr-x", size: 124000 },
+                  "bash": { type: "file", perms: "-rwxr-xr-x", size: 980000 },
+                  "ls": { type: "file", perms: "-rwxr-xr-x", size: 45000 },
+                  "pwd": { type: "file", perms: "-rwxr-xr-x", size: 28000 },
+                  "cat": { type: "file", perms: "-rwxr-xr-x", size: 32000 },
+                  "grep": { type: "file", perms: "-rwxr-xr-x", size: 140000 },
+                }
+              },
+              "etc": {
+                type: "dir",
+                children: {
+                  "passwd": { type: "file", perms: "-rw-r--r--", content: "root:x:0:0:root:/root:/bin/bash\naprendiz:x:1000:1000:Aprendiz Linux:/home/aprendiz:/bin/bash\n", size: 128 },
+                  "hostname": { type: "file", perms: "-rw-r--r--", content: "wasm-linux\n", size: 11 },
+                  "os-release": { type: "file", perms: "-rw-r--r--", content: "NAME=\"Wasm Linux\"\nVERSION=\"2026.1\"\nID=wasmlinux\n", size: 48 },
+                }
+              },
+              "var": {
+                type: "dir",
+                children: {
+                  "log": {
+                    type: "dir",
+                    children: {
+                      "syslog": { type: "file", perms: "-rw-r-----", content: "kernel: [    0.000000] Linux version 6.1.0-wasm\nkernel: [    0.010214] Booting virtual CPU\n", size: 240 },
+                    }
+                  }
+                }
+              },
+              "home": {
+                type: "dir",
+                children: {
+                  "aprendiz": {
+                    type: "dir",
+                    children: {
+                      ".bashrc": { type: "file", perms: "-rw-r--r--", content: "# ~/.bashrc\nPS1='\\u@wasm:\\w$ '\nalias ll='ls -la'\n", size: 180 },
+                      ".profile": { type: "file", perms: "-rw-r--r--", content: "export PATH=/bin:/usr/bin\n", size: 42 },
+                      "proyectos": {
+                        type: "dir",
+                        children: {
+                          "web": { type: "dir", children: { "index.html": { type: "file", content: "<h1>Hola Linux WASM</h1>", perms: "-rw-r--r--", size: 32 } } },
+                          "readme.md": { type: "file", content: "# Mis Proyectos en Linux\nBienvenido.", perms: "-rw-r--r--", size: 45 }
+                        }
+                      },
+                      "documentos": {
+                        type: "dir",
+                        children: {
+                          "guia.txt": { type: "file", content: "Comandos básicos de supervivencia en terminal.", perms: "-rw-r--r--", size: 52 }
+                        }
+                      },
+                      "servidor.log": {
+                        type: "file",
+                        perms: "-rw-r--r--",
+                        content: `[2026-10-30 10:00:01] INFO  Servidor web iniciado en puerto 8080
+[2026-10-30 10:00:15] INFO  GET /index.html 200 OK - 12ms
+[2026-10-30 10:01:22] WARN  Conexión lenta detectada desde 192.168.1.45
+[2026-10-30 10:02:40] ERROR Fallo de autenticación para usuario 'admin'
+[2026-10-30 10:03:12] GET   /api/v1/users 200 OK - 4ms
+[2026-10-30 10:04:05] ERROR 404 Recurso no encontrado: /favicon.ico
+[2026-10-30 10:05:18] ERROR 404 Recurso no encontrado: /wp-login.php
+[2026-10-30 10:06:01] INFO  Backup nocturno completado con éxito
+[2026-10-30 10:07:33] ERROR 500 Error de conexión con base de datos`,
+                        size: 512
+                      },
+                      "script.sh": {
+                        type: "file",
+                        perms: "-rw-r--r--",
+                        content: "#!/bin/bash\necho '¡Script ejecutado exitosamente!'\n",
+                        size: 54
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        };
+
+        this.processes = [
+          { pid: 1, user: "root", cpu: "0.0", mem: "0.2", cmd: "/sbin/init" },
+          { pid: 42, user: "root", cpu: "0.0", mem: "0.4", cmd: "systemd-udevd" },
+          { pid: 105, user: "root", cpu: "0.0", mem: "0.5", cmd: "/usr/sbin/sshd -D" },
+          { pid: 884, user: "aprendiz", cpu: "0.1", mem: "1.2", cmd: "-bash" },
+          { pid: 1337, user: "aprendiz", cpu: "98.4", mem: "14.2", cmd: "node server_loop_rebelde.js" },
+        ];
+      }
+
+      resolvePath(targetPath) {
+        if (!targetPath || targetPath === "~") return "/home/aprendiz";
+        if (targetPath.startsWith("~/")) {
+          targetPath = "/home/aprendiz/" + targetPath.slice(2);
+        }
+        let fullPath = targetPath.startsWith("/") ? targetPath : (this.cwd === "/" ? "/" + targetPath : this.cwd + "/" + targetPath);
+        
+        const segments = fullPath.split("/").filter(Boolean);
+        const resolved = [];
+        for (const seg of segments) {
+          if (seg === ".") continue;
+          if (seg === "..") {
+            if (resolved.length > 0) resolved.pop();
+          } else {
+            resolved.push(seg);
+          }
+        }
+        return "/" + resolved.join("/");
+      }
+
+      getNode(path) {
+        const resolved = this.resolvePath(path);
+        if (resolved === "/") return this.tree["/"];
+        const parts = resolved.split("/").filter(Boolean);
+        let curr = this.tree["/"];
+        for (const part of parts) {
+          if (!curr.children || !curr.children[part]) return null;
+          curr = curr.children[part];
+        }
+        return curr;
+      }
+
+      getParentNodeAndName(path) {
+        const resolved = this.resolvePath(path);
+        if (resolved === "/") return null;
+        const parts = resolved.split("/").filter(Boolean);
+        const name = parts.pop();
+        const parentPath = "/" + parts.join("/");
+        const parentNode = this.getNode(parentPath);
+        return { parentNode, name, parentPath };
+      }
+    }
+
+    const vfs = new VirtualFileSystem();
+
+    /* =========================================================================
+       TERMINAL SHELL INTERPRETER (Supports ANSI, Pipes, History, Autocomplete)
+       ========================================================================= */
+    const terminalLogsEl = document.getElementById("terminalLogs");
+    const termInputEl = document.getElementById("termInput");
+    const termScreenEl = document.getElementById("terminalScreen");
+    const promptPathEl = document.getElementById("termPromptPath");
+    const termCwdBadgeEl = document.getElementById("termCwdBadge");
+    const termMessageBadgeEl = document.getElementById("termMessageBadge");
+
+    const history = [];
+    let historyIndex = -1;
+
+    function getDisplayPath(path) {
+      if (path === "/home/aprendiz") return "~";
+      if (path.startsWith("/home/aprendiz/")) return "~" + path.slice(14);
+      return path;
+    }
+
+    function updatePrompt() {
+      const display = getDisplayPath(vfs.cwd);
+      promptPathEl.textContent = display;
+      termCwdBadgeEl.textContent = display;
+    }
+
+    function focusTermInput() {
+      termInputEl.focus();
+    }
+
+    function appendLog(lineHtml) {
+      const div = document.createElement("div");
+      div.className = "break-all";
+      div.innerHTML = lineHtml;
+      terminalLogsEl.appendChild(div);
+      termScreenEl.scrollTop = termScreenEl.scrollHeight;
+    }
+
+    function showToast(text, isError = false) {
+      termMessageBadgeEl.textContent = text;
+      termMessageBadgeEl.className = isError 
+        ? "text-rose-400 font-sans block text-xs" 
+        : "text-cyan-400 font-sans block text-xs animate-pulse";
+      setTimeout(() => {
+        termMessageBadgeEl.className = "hidden";
+      }, 4000);
+    }
+
+    /* Execute Command through Simulated POSIX WASM Shell */
+    function executeCommand(rawCommand) {
+      const trimmed = rawCommand.trim();
+      if (!trimmed) return;
+
+      // Add to command history
+      history.push(rawCommand);
+      historyIndex = history.length;
+
+      // Echo command line
+      const displayCwd = getDisplayPath(vfs.cwd);
+      appendLog(`<span class="text-emerald-400 font-bold">aprendiz@wasm</span><span class="text-slate-500">:</span><span class="text-cyan-400 font-semibold">${displayCwd}</span><span class="text-slate-400">$</span> <span class="text-white">${escapeHtml(rawCommand)}</span>`);
+
+      // Check for clear command
+      if (trimmed === "clear") {
+        terminalLogsEl.innerHTML = "";
+        return;
+      }
+
+      // Check for pipes (|)
+      if (trimmed.includes("|")) {
+        handlePipedCommand(trimmed);
+        evaluateCurrentObjective(trimmed);
+        return;
+      }
+
+      // Check for redirection (>)
+      if (trimmed.includes(">")) {
+        handleRedirectCommand(trimmed);
+        evaluateCurrentObjective(trimmed);
+        return;
+      }
+
+      // Standard command execution
+      const args = trimmed.split(/\s+/);
+      const cmd = args[0];
+
+      switch (cmd) {
+        case "pwd":
+          appendLog(`<div class="text-slate-300 font-mono">${vfs.cwd}</div>`);
+          break;
+
+        case "whoami":
+          appendLog(`<div class="text-slate-300 font-mono">aprendiz</div>`);
+          break;
+
+        case "date":
+          appendLog(`<div class="text-slate-300 font-mono">${new Date().toUTCString()}</div>`);
+          break;
+
+        case "uname":
+          if (args.includes("-a")) {
+            appendLog(`<div class="text-slate-300 font-mono">Linux wasm-linux 6.1.0-wasm-x86_64 #1 SMP PREEMPT_DYNAMIC Fri Oct 30 2026 x86_64 GNU/Linux</div>`);
+          } else {
+            appendLog(`<div class="text-slate-300 font-mono">Linux</div>`);
+          }
+          break;
+
+        case "ls":
+          handleLs(args.slice(1));
+          break;
+
+        case "cd":
+          handleCd(args[1]);
+          break;
+
+        case "mkdir":
+          handleMkdir(args.slice(1));
+          break;
+
+        case "touch":
+          handleTouch(args.slice(1));
+          break;
+
+        case "cat":
+          handleCat(args.slice(1));
+          break;
+
+        case "head":
+          handleHead(args.slice(1));
+          break;
+
+        case "cp":
+          handleCp(args[1], args[2]);
+          break;
+
+        case "mv":
+          handleMv(args[1], args[2]);
+          break;
+
+        case "rm":
+          handleRm(args.slice(1));
+          break;
+
+        case "grep":
+          handleGrep(args.slice(1));
+          break;
+
+        case "chmod":
+          handleChmod(args.slice(1));
+          break;
+
+        case "echo":
+          const echoText = rawCommand.replace(/^echo\s+/, '').replace(/^['"](.*)['"]$/, '$1');
+          appendLog(`<div class="text-slate-300 font-mono">${escapeHtml(echoText)}</div>`);
+          break;
+
+        case "ps":
+          handlePs();
+          break;
+
+        case "kill":
+          handleKill(args.slice(1));
+          break;
+
+        case "help":
+          appendLog(`<div class="text-cyan-400 font-mono text-xs">Comandos disponibles en TermLearn:</div>
+<div class="text-slate-400 font-mono text-xs pl-2">pwd, ls, cd, mkdir, touch, cp, mv, rm, cat, head, grep, chmod, ps, kill, whoami, echo, clear, date, uname</div>`);
+          break;
+
+        default:
+          appendLog(`<div class="text-rose-400 font-mono text-xs">bash: ${escapeHtml(cmd)}: orden no encontrada. Escribe <span class="text-cyan-300">help</span> para ver comandos disponibles.</div>`);
+          playErrorSound();
+          break;
+      }
+
+      updatePrompt();
+      evaluateCurrentObjective(rawCommand);
+    }
+
+    function handleLs(args) {
+      const showAll = args.some(a => a.startsWith("-") && a.includes("a"));
+      const showLong = args.some(a => a.startsWith("-") && a.includes("l"));
+      const targetArg = args.find(a => !a.startsWith("-")) || ".";
+
+      const node = vfs.getNode(targetArg);
+      if (!node) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">ls: no se puede acceder a '${escapeHtml(targetArg)}': No existe el archivo o el directorio</div>`);
+        return;
+      }
+      if (node.type !== "dir") {
+        appendLog(`<div class="text-slate-300 font-mono">${escapeHtml(targetArg)}</div>`);
+        return;
+      }
+
+      const entries = Object.keys(node.children || {}).sort();
+      let displayed = showAll ? [".", "..", ...entries] : entries.filter(e => !e.startsWith("."));
+
+      if (showLong) {
+        let out = `<div class="font-mono text-xs text-slate-300 space-y-0.5">`;
+        out += `<div class="text-slate-500">total ${displayed.length * 4}</div>`;
+        for (const name of displayed) {
+          let item = node.children ? node.children[name] : null;
+          let isDir = false;
+          let perms = "-rw-r--r--";
+          let size = 4096;
+
+          if (name === "." || name === "..") {
+            isDir = true;
+            perms = "drwxr-xr-x";
+          } else if (item) {
+            isDir = item.type === "dir";
+            perms = item.perms || (isDir ? "drwxr-xr-x" : "-rw-r--r--");
+            size = item.size || (isDir ? 4096 : 120);
+          }
+
+          const color = isDir ? "text-cyan-400 font-bold" : (perms.includes("x") ? "text-emerald-400 font-bold" : (name.startsWith(".") ? "text-slate-500" : "text-slate-200"));
+          out += `<div><span class="text-slate-500">${perms}</span> <span class="text-slate-400">1</span> <span class="text-slate-400">aprendiz</span> <span class="text-slate-400">aprendiz</span> <span class="text-slate-400 w-12 inline-block text-right">${size}</span> <span class="text-slate-500">Oct 30 10:00</span> <span class="${color}">${escapeHtml(name)}</span></div>`;
+        }
+        out += `</div>`;
+        appendLog(out);
+      } else {
+        let out = `<div class="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs">`;
+        for (const name of displayed) {
+          const item = node.children ? node.children[name] : null;
+          const isDir = item ? item.type === "dir" : (name === "." || name === "..");
+          const isExec = item && item.perms && item.perms.includes("x");
+          const color = isDir ? "text-cyan-400 font-bold" : (isExec ? "text-emerald-400 font-bold" : (name.startsWith(".") ? "text-slate-500" : "text-slate-200"));
+          out += `<span class="${color}">${escapeHtml(name)}${isDir ? '/' : ''}</span>`;
+        }
+        out += `</div>`;
+        appendLog(out);
+      }
+    }
+
+    function handleCd(target) {
+      if (!target || target === "~") {
+        vfs.cwd = "/home/aprendiz";
+        return;
+      }
+      const newPath = vfs.resolvePath(target);
+      const node = vfs.getNode(newPath);
+      if (!node) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">bash: cd: ${escapeHtml(target)}: No existe el archivo o el directorio</div>`);
+        return;
+      }
+      if (node.type !== "dir") {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">bash: cd: ${escapeHtml(target)}: No es un directorio</div>`);
+        return;
+      }
+      vfs.cwd = newPath;
+    }
+
+    function handleMkdir(names) {
+      if (!names.length) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">mkdir: falta un operando</div>`);
+        return;
+      }
+      for (const name of names) {
+        if (name.startsWith("-")) continue;
+        const res = vfs.getParentNodeAndName(name);
+        if (!res || !res.parentNode || res.parentNode.type !== "dir") {
+          appendLog(`<div class="text-rose-400 font-mono text-xs">mkdir: no se puede crear el directorio '${escapeHtml(name)}': No existe el directorio superior</div>`);
+          return;
+        }
+        if (res.parentNode.children[res.name]) {
+          appendLog(`<div class="text-rose-400 font-mono text-xs">mkdir: no se puede crear el directorio '${escapeHtml(name)}': El archivo ya existe</div>`);
+          return;
+        }
+        res.parentNode.children[res.name] = {
+          type: "dir",
+          children: {},
+          perms: "drwxr-xr-x",
+          size: 4096
+        };
+      }
+    }
+
+    function handleTouch(names) {
+      if (!names.length) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">touch: falta el archivo operando</div>`);
+        return;
+      }
+      for (const name of names) {
+        const res = vfs.getParentNodeAndName(name);
+        if (!res || !res.parentNode || res.parentNode.type !== "dir") {
+          appendLog(`<div class="text-rose-400 font-mono text-xs">touch: no se puede aplicar touch sobre '${escapeHtml(name)}': No existe la ruta</div>`);
+          return;
+        }
+        if (!res.parentNode.children[res.name]) {
+          res.parentNode.children[res.name] = {
+            type: "file",
+            content: "",
+            perms: "-rw-r--r--",
+            size: 0
+          };
+        }
+      }
+    }
+
+    function handleCat(files) {
+      if (!files.length) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">cat: falta el operando</div>`);
+        return;
+      }
+      for (const file of files) {
+        const node = vfs.getNode(file);
+        if (!node) {
+          appendLog(`<div class="text-rose-400 font-mono text-xs">cat: ${escapeHtml(file)}: No existe el archivo o el directorio</div>`);
+          return;
+        }
+        if (node.type === "dir") {
+          appendLog(`<div class="text-rose-400 font-mono text-xs">cat: ${escapeHtml(file)}: Es un directorio</div>`);
+          return;
+        }
+        appendLog(`<pre class="text-slate-300 font-mono text-xs whitespace-pre-wrap">${escapeHtml(node.content || '')}</pre>`);
+      }
+    }
+
+    function handleHead(args) {
+      const fileName = args.find(a => !a.startsWith("-"));
+      if (!fileName) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">head: falta el archivo operando</div>`);
+        return;
+      }
+      const node = vfs.getNode(fileName);
+      if (!node || node.type !== "file") {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">head: no se puede abrir '${escapeHtml(fileName)}'</div>`);
+        return;
+      }
+      const lines = (node.content || '').split("\n").slice(0, 5).join("\n");
+      appendLog(`<pre class="text-slate-300 font-mono text-xs whitespace-pre-wrap">${escapeHtml(lines)}</pre>`);
+    }
+
+    function handleCp(src, dest) {
+      if (!src || !dest) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">cp: falta el archivo operando de origen o destino</div>`);
+        return;
+      }
+      const srcNode = vfs.getNode(src);
+      if (!srcNode) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">cp: no se puede efectuar stat sobre '${escapeHtml(src)}': No existe el archivo o el directorio</div>`);
+        return;
+      }
+      const destRes = vfs.getParentNodeAndName(dest);
+      if (!destRes || !destRes.parentNode) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">cp: no se puede crear '${escapeHtml(dest)}': Ruta inválida</div>`);
+        return;
+      }
+      destRes.parentNode.children[destRes.name] = JSON.parse(JSON.stringify(srcNode));
+    }
+
+    function handleMv(src, dest) {
+      if (!src || !dest) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">mv: falta el operando de origen o destino</div>`);
+        return;
+      }
+      const srcRes = vfs.getParentNodeAndName(src);
+      if (!srcRes || !srcRes.parentNode || !srcRes.parentNode.children[srcRes.name]) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">mv: no se puede efectuar stat sobre '${escapeHtml(src)}': No existe el archivo</div>`);
+        return;
+      }
+      const srcNode = srcRes.parentNode.children[srcRes.name];
+      const destRes = vfs.getParentNodeAndName(dest);
+      if (!destRes || !destRes.parentNode) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">mv: destino inválido '${escapeHtml(dest)}'</div>`);
+        return;
+      }
+      destRes.parentNode.children[destRes.name] = srcNode;
+      delete srcRes.parentNode.children[srcRes.name];
+    }
+
+    function handleRm(args) {
+      const isRecursive = args.some(a => a === "-r" || a === "-rf" || a === "-fr");
+      const target = args.find(a => !a.startsWith("-"));
+      if (!target) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">rm: falta un operando</div>`);
+        return;
+      }
+      const res = vfs.getParentNodeAndName(target);
+      if (!res || !res.parentNode || !res.parentNode.children[res.name]) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">rm: no se puede borrar '${escapeHtml(target)}': No existe el archivo</div>`);
+        return;
+      }
+      const targetNode = res.parentNode.children[res.name];
+      if (targetNode.type === "dir" && !isRecursive) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">rm: no se puede borrar '${escapeHtml(target)}': Es un directorio (usa rm -r)</div>`);
+        return;
+      }
+      delete res.parentNode.children[res.name];
+    }
+
+    function handleGrep(args) {
+      const pattern = args.find(a => !a.startsWith("-"));
+      const fileName = args.filter(a => !a.startsWith("-"))[1];
+      if (!pattern || !fileName) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">grep: uso: grep PATRÓN ARCHIVO</div>`);
+        return;
+      }
+      const node = vfs.getNode(fileName);
+      if (!node || node.type !== "file") {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">grep: ${escapeHtml(fileName)}: No existe el archivo o es un directorio</div>`);
+        return;
+      }
+      const cleanPat = pattern.replace(/^['"]|['"]$/g, '');
+      const lines = (node.content || '').split("\n");
+      const matches = lines.filter(l => l.includes(cleanPat));
+      if (matches.length > 0) {
+        let out = `<div class="font-mono text-xs space-y-0.5">`;
+        for (const line of matches) {
+          const highlighted = line.split(cleanPat).join(`<span class="bg-rose-500/30 text-rose-300 font-bold px-0.5 rounded">${cleanPat}</span>`);
+          out += `<div>${highlighted}</div>`;
+        }
+        out += `</div>`;
+        appendLog(out);
+      }
+    }
+
+    function handleChmod(args) {
+      if (args.length < 2) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">chmod: faltan operandos</div>`);
+        return;
+      }
+      const mode = args[0];
+      const file = args[1];
+      const node = vfs.getNode(file);
+      if (!node) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">chmod: no se puede acceder a '${escapeHtml(file)}': No existe el archivo</div>`);
+        return;
+      }
+      if (mode === "+x") {
+        node.perms = "-rwxr-xr-x";
+      } else if (mode === "755") {
+        node.perms = "-rwxr-xr-x";
+      } else if (mode === "644") {
+        node.perms = "-rw-r--r--";
+      }
+    }
+
+    function handlePs() {
+      let out = `<div class="font-mono text-xs space-y-0.5">`;
+      out += `<div class="text-slate-500 font-bold">USER       PID  %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND</div>`;
+      for (const p of vfs.processes) {
+        const isSuspicious = parseFloat(p.cpu) > 50;
+        const color = isSuspicious ? "text-amber-300 font-bold" : "text-slate-300";
+        out += `<div class="${color}"><span class="inline-block w-10">${p.user}</span> <span class="inline-block w-6 text-right">${p.pid}</span>  <span class="inline-block w-6 text-right">${p.cpu}</span>  <span class="inline-block w-6 text-right">${p.mem}</span>  14200  2100 pts/0    S+   10:00   0:02 ${escapeHtml(p.cmd)}</div>`;
+      }
+      out += `</div>`;
+      appendLog(out);
+    }
+
+    function handleKill(args) {
+      if (!args.length) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">kill: uso: kill [-s señal | -n n_señal | -señal] pid ...</div>`);
+        return;
+      }
+      const pidStr = args.find(a => !a.startsWith("-"));
+      const pid = parseInt(pidStr, 10);
+      const idx = vfs.processes.findIndex(p => p.pid === pid);
+      if (idx === -1) {
+        appendLog(`<div class="text-rose-400 font-mono text-xs">bash: kill: (${pidStr}) - No existe tal proceso</div>`);
+        return;
+      }
+      const killed = vfs.processes.splice(idx, 1)[0];
+      appendLog(`<div class="text-emerald-400 font-mono text-xs">[1]+ Terminado (SIGTERM) ${escapeHtml(killed.cmd)}</div>`);
+    }
+
+    function handlePipedCommand(raw) {
+      const parts = raw.split("|").map(s => s.trim());
+      if (parts[0].startsWith("cat ") && parts[1].startsWith("grep ")) {
+        const file = parts[0].slice(4).trim();
+        const pattern = parts[1].slice(5).trim().replace(/^['"]|['"]$/g, '');
+        const node = vfs.getNode(file);
+        if (!node) {
+          appendLog(`<div class="text-rose-400 font-mono text-xs">cat: ${escapeHtml(file)}: No existe el archivo</div>`);
+          return;
+        }
+        const lines = (node.content || '').split("\n").filter(l => l.includes(pattern));
+        if (lines.length > 0) {
+          let out = `<div class="font-mono text-xs space-y-0.5">`;
+          for (const line of lines) {
+            const high = line.split(pattern).join(`<span class="bg-cyan-500/30 text-cyan-300 font-bold px-0.5 rounded">${pattern}</span>`);
+            out += `<div>${high}</div>`;
+          }
+          out += `</div>`;
+          appendLog(out);
+        }
+      } else {
+        appendLog(`<div class="text-slate-300 font-mono text-xs">[Tubería procesada exitosamente en kernel WASM]</div>`);
+      }
+    }
+
+    function handleRedirectCommand(raw) {
+      const parts = raw.split(">").map(s => s.trim());
+      const left = parts[0];
+      const right = parts[1];
+      if (left.startsWith("echo ") && right) {
+        const text = left.slice(5).trim().replace(/^['"]|['"]$/g, '');
+        const res = vfs.getParentNodeAndName(right);
+        if (res && res.parentNode) {
+          res.parentNode.children[res.name] = {
+            type: "file",
+            content: text + "\n",
+            perms: "-rw-r--r--",
+            size: text.length + 1
+          };
+        }
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* Auto-completion (Tab key) */
+    function handleTabCompletion() {
+      const current = termInputEl.value;
+      const parts = current.split(" ");
+      const last = parts[parts.length - 1];
+      if (!last) return;
+
+      const node = vfs.getNode(".");
+      if (!node || !node.children) return;
+
+      const candidates = Object.keys(node.children).filter(name => name.startsWith(last));
+      if (candidates.length === 1) {
+        parts[parts.length - 1] = candidates[0] + (node.children[candidates[0]].type === "dir" ? "/" : " ");
+        termInputEl.value = parts.join(" ");
+      } else if (candidates.length > 1) {
+        appendLog(`<div class="text-slate-400 font-mono text-xs">${candidates.join("  ")}</div>`);
+      }
+    }
+
+    /* Keyboard navigation */
+    termInputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const val = termInputEl.value;
+        termInputEl.value = "";
+        executeCommand(val);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (history.length > 0 && historyIndex > 0) {
+          historyIndex--;
+          termInputEl.value = history[historyIndex];
+        }
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (historyIndex < history.length - 1) {
+          historyIndex++;
+          termInputEl.value = history[historyIndex];
+        } else {
+          historyIndex = history.length;
+          termInputEl.value = "";
+        }
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        handleTabCompletion();
+      } else if (e.key === "l" && e.ctrlKey) {
+        e.preventDefault();
+        terminalLogsEl.innerHTML = "";
+      }
+    });
+
+    /* =========================================================================
+       TUTORIAL STATE & OBJECTIVE VALIDATION ENGINE
+       ========================================================================= */
+    let currentLessonIdx = 0;
+    let userXP = 0;
+    const completedLessons = new Set();
+
+    const moduleSelectEl = document.getElementById("moduleSelect");
+    const lessonCounterEl = document.getElementById("lessonCounter");
+    const xpCountEl = document.getElementById("xpCount");
+    const courseProgressEl = document.getElementById("courseProgress");
+    const moduleBadgeEl = document.getElementById("moduleBadge");
+    const stepBadgeEl = document.getElementById("stepBadge");
+    const lessonTitleEl = document.getElementById("lessonTitle");
+    const lessonDescriptionEl = document.getElementById("lessonDescription");
+    const anatomyContainerEl = document.getElementById("anatomyContainer");
+    const objectiveStatusEl = document.getElementById("objectiveStatus");
+    const objectiveTextEl = document.getElementById("objectiveText");
+    const objectiveBoxEl = document.getElementById("objectiveBox");
+    const hintContentEl = document.getElementById("hintContent");
+    const proTipTextEl = document.getElementById("proTipText");
+    const prevBtnEl = document.getElementById("prevBtn");
+    const nextBtnEl = document.getElementById("nextBtn");
+
+    function renderModuleOptions() {
+      moduleSelectEl.innerHTML = "";
+      CURRICULUM.forEach((mod, idx) => {
+        const opt = document.createElement("option");
+        opt.value = idx;
+        opt.textContent = mod.title;
+        moduleSelectEl.appendChild(opt);
+      });
+    }
+
+    moduleSelectEl.addEventListener("change", (e) => {
+      const modIdx = parseInt(e.target.value, 10);
+      const firstLessonInMod = ALL_LESSONS.findIndex(l => l.moduleIndex === modIdx);
+      if (firstLessonInMod !== -1) {
+        loadLesson(firstLessonInMod);
+      }
+    });
+
+    function loadLesson(index) {
+      currentLessonIdx = index;
+      const lesson = ALL_LESSONS[index];
+
+      // UI updates
+      moduleSelectEl.value = lesson.moduleIndex;
+      lessonCounterEl.textContent = `Lección ${index + 1} de ${ALL_LESSONS.length}`;
+      moduleBadgeEl.textContent = lesson.moduleBadge;
+      stepBadgeEl.textContent = `Paso ${lesson.lessonIndex + 1} de ${CURRICULUM[lesson.moduleIndex].lessons.length}`;
+      lessonTitleEl.innerHTML = lesson.title;
+      lessonDescriptionEl.innerHTML = lesson.desc;
+      objectiveTextEl.innerHTML = lesson.objectiveText;
+      hintContentEl.innerHTML = `<p>${lesson.hint}</p>`;
+      proTipTextEl.innerHTML = lesson.proTip;
+
+      // Render Anatomy of Command
+      anatomyContainerEl.innerHTML = "";
+      lesson.anatomy.forEach(item => {
+        const span = document.createElement("div");
+        span.className = `flex flex-col p-2 rounded-lg border ${item.color}`;
+        span.innerHTML = `
+          <div class="font-bold text-sm tracking-wide">${item.token}</div>
+          <div class="text-[10px] uppercase font-semibold text-slate-400 mt-0.5">${item.label}</div>
+          <div class="text-[11px] text-slate-300 font-sans mt-0.5">${item.desc}</div>
+        `;
+        anatomyContainerEl.appendChild(span);
+      });
+
+      // Update Objective State
+      const isCompleted = completedLessons.has(lesson.id);
+      if (isCompleted) {
+        setObjectiveCompletedState();
+      } else {
+        setObjectivePendingState();
+      }
+
+      // Prev / Next button states
+      prevBtnEl.disabled = currentLessonIdx === 0;
+      nextBtnEl.disabled = !isCompleted && currentLessonIdx !== ALL_LESSONS.length - 1;
+
+      // Update Progress Bar
+      const percent = ((completedLessons.size) / ALL_LESSONS.length) * 100;
+      courseProgressEl.style.width = Math.max(5, percent) + "%";
+
+      focusTermInput();
+    }
+
+    function setObjectivePendingState() {
+      objectiveBoxEl.className = "rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-950/30 to-slate-900/60 p-4 relative overflow-hidden transition-all duration-300";
+      objectiveStatusEl.textContent = "Esperando comando...";
+      objectiveStatusEl.className = "text-[11px] font-medium px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30";
+      nextBtnEl.disabled = true;
+    }
+
+    function setObjectiveCompletedState() {
+      objectiveBoxEl.className = "rounded-xl border border-emerald-500/60 bg-gradient-to-br from-emerald-950/40 to-slate-900/80 p-4 relative overflow-hidden transition-all duration-300 shadow-lg shadow-emerald-950/30";
+      objectiveStatusEl.textContent = "¡Completado! ✓";
+      objectiveStatusEl.className = "text-[11px] font-bold px-2.5 py-0.5 rounded bg-emerald-500 text-slate-950 border border-emerald-400 shadow-sm";
+      nextBtnEl.disabled = false;
+      nextBtnEl.classList.add("animate-pulse");
+      setTimeout(() => nextBtnEl.classList.remove("animate-pulse"), 2000);
+    }
+
+    function evaluateCurrentObjective(cmd) {
+      const lesson = ALL_LESSONS[currentLessonIdx];
+      if (completedLessons.has(lesson.id)) return;
+
+      if (lesson.validator(cmd)) {
+        completedLessons.add(lesson.id);
+        userXP += lesson.xp;
+        xpCountEl.textContent = `${userXP} XP`;
+        
+        playSuccessSound();
+        setObjectiveCompletedState();
+        showToast(`🎉 ¡Excelente! Misión completada (+${lesson.xp} XP)`);
+
+        // Automatically update progress bar
+        const percent = (completedLessons.size / ALL_LESSONS.length) * 100;
+        courseProgressEl.style.width = percent + "%";
+      }
+    }
+
+    prevBtnEl.addEventListener("click", () => {
+      if (currentLessonIdx > 0) loadLesson(currentLessonIdx - 1);
+    });
+
+    nextBtnEl.addEventListener("click", () => {
+      if (currentLessonIdx < ALL_LESSONS.length - 1) {
+        loadLesson(currentLessonIdx + 1);
+      } else {
+        showToast("🎓 ¡Felicitaciones! Has completado todo el currículum MVP.");
+      }
+    });
+
+    /* Hints toggle */
+    const hintToggleBtn = document.getElementById("hintToggleBtn");
+    const hintArrow = document.getElementById("hintArrow");
+    hintToggleBtn.addEventListener("click", () => {
+      const isHidden = hintContentEl.classList.contains("hidden");
+      if (isHidden) {
+        hintContentEl.classList.remove("hidden");
+        hintArrow.style.transform = "rotate(180deg)";
+      } else {
+        hintContentEl.classList.add("hidden");
+        hintArrow.style.transform = "rotate(0deg)";
+      }
+    });
+
+    /* Sound toggle */
+    const soundToggle = document.getElementById("soundToggle");
+    const soundIconOn = document.getElementById("soundIconOn");
+    const soundIconOff = document.getElementById("soundIconOff");
+    soundToggle.addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      if (soundEnabled) {
+        soundIconOn.classList.remove("hidden");
+        soundIconOff.classList.add("hidden");
+      } else {
+        soundIconOn.classList.add("hidden");
+        soundIconOff.classList.remove("hidden");
+      }
+    });
+
+    /* Cheatsheet Modal */
+    const cheatSheetBtn = document.getElementById("cheatSheetBtn");
+    const cheatSheetModal = document.getElementById("cheatSheetModal");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    cheatSheetBtn.addEventListener("click", () => cheatSheetModal.classList.remove("hidden"));
+    closeModalBtn.addEventListener("click", () => cheatSheetModal.classList.add("hidden"));
+    cheatSheetModal.addEventListener("click", (e) => {
+      if (e.target === cheatSheetModal) cheatSheetModal.classList.add("hidden");
+    });
+
+    /* Quick helper buttons */
+    document.getElementById("copyPromptBtn").addEventListener("click", () => {
+      const lesson = ALL_LESSONS[currentLessonIdx];
+      termInputEl.value = lesson.suggestedCommand;
+      focusTermInput();
+      showToast("Comando insertado en el prompt. Presiona Enter.");
+    });
+
+    document.getElementById("clearTermBtn").addEventListener("click", () => {
+      terminalLogsEl.innerHTML = "";
+      focusTermInput();
+    });
+
+    document.getElementById("resetFSSBtn").addEventListener("click", () => {
+      vfs.reset();
+      updatePrompt();
+      appendLog(`<div class="text-amber-400 font-mono text-xs">[Sistema de archivos restaurado a su estado original]</div>`);
+      focusTermInput();
+    });
+
+    /* Initialization */
+    renderModuleOptions();
+    loadLesson(0);
+    updatePrompt();
+    focusTermInput();
+  </script>
+</body>
+</html>
