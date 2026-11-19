@@ -29,23 +29,6 @@ Plataforma educativa interactiva diseñada para aprender comandos y servicios de
 
 ---
 
-## ⚡ ¿Cómo Probar el Proyecto de Inmediato?
-
-El proyecto cuenta con una versión interactiva **completamente funcional y autocontenida** en `index.html`. Puedes probarla sin necesidad de instalar dependencias pesadas:
-
-### Opción 1: Abrir directamente en el navegador (macOS)
-```bash
-open /Users/dexxa/.gemini/antigravity/scratch/terminal-academy/index.html
-```
-
-### Opción 2: Iniciar un servidor local ultraligero
-```bash
-cd /Users/dexxa/.gemini/antigravity/scratch/terminal-academy
-python3 -m http.server 3000
-```
-Luego abre tu navegador en: [http://localhost:3000](http://localhost:3000)
-
----
 
 ## 🧩 Decisiones Técnicas Implementadas
 
