@@ -2,6 +2,8 @@
 
 Plataforma educativa interactiva diseñada para aprender comandos y servicios de Linux de forma didáctica, fluida y visual, combinando un **layout de 2 paneles (Split-Screen)**, un **modelo de tutorial guiado paso a paso** con anatomía de comandos, y un **motor de ejecución Linux en WebAssembly**.
 
+🌐 **Demo en vivo:** https://dexxat.github.io/TermLearn/
+
 ---
 
 ## 📸 Vista Rápida del Diseño y Decisiones de Arquitectura
